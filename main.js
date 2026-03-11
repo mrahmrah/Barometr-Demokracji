@@ -872,35 +872,41 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
 });
 // --- INTEGRACJA Z GEMINI AI ---
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey); 
+const genAI = new GoogleGenerativeAI(apiKey);
 
 const analyzeBtn = document.querySelector('.analyze-democracy-btn');
 const mainInput = document.querySelector('.main-text-input');
 
 if (analyzeBtn && mainInput) {
     analyzeBtn.addEventListener('click', async () => {
-        if (!apiKey) return alert("BŁĄD: Brak klucza API.");
+        if (!apiKey) return alert("BŁĄD: Brak klucza API w systemie.");
 
         const text = mainInput.value;
-        if (!text) return alert("Wklej tekst!");
+        if (!text) return alert("Wklej tekst do analizy!");
 
+        // Blokujemy przycisk, żeby uniknąć podwójnych kliknięć
+        analyzeBtn.disabled = true;
         analyzeBtn.style.opacity = "0.5";
         analyzeBtn.innerText = "Analizuję...";
 
         try {
-            // Zmieniona nazwa modelu na wersję stabilną bez 'v1beta' w nazwie
-           const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: 'v1beta' });
+            // Zmiana: wymuszamy stabilną wersję modelu
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             
-            // Dodajemy wymuszenie wersji API (często naprawia 404)
+            // Wysyłamy zapytanie
             const result = await model.generateContent(text);
             const response = await result.response;
+            const output = response.text();
             
-            alert("SUKCES! AI odpowiada: " + response.text());
+            alert("ANALIZA UKOŃCZONA:\n\n" + output);
+            
         } catch (error) {
-            // Jeśli to nadal wywali 404, spróbuj zamienić linię wyżej na:
-            // const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+            console.error("Szczegóły błędu:", error);
+            // Jeśli 404 powróci, wyświetlimy czytelniejszy komunikat
             alert("Błąd: " + error.message);
         } finally {
+            // KLUCZOWE: Odblokowujemy przycisk, żeby można było analizować kolejny raz
+            analyzeBtn.disabled = false;
             analyzeBtn.style.opacity = "1";
             analyzeBtn.innerText = "Analizuj standardy";
         }
