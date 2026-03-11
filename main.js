@@ -872,15 +872,15 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
 });
 // --- INTEGRACJA Z GEMINI AI ---
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(apiKey); 
 
 const analyzeBtn = document.querySelector('.analyze-democracy-btn');
 const mainInput = document.querySelector('.main-text-input');
 
 if (analyzeBtn && mainInput) {
     analyzeBtn.addEventListener('click', async () => {
-        // DIAGNOSTYKA - ZOBACZYMY TO NA EKRANIE
         if (!apiKey) {
-            return alert("BŁĄD: Kod nie widzi klucza API! Sprawdź Vercel.");
+            return alert("BŁĄD: Kod nie widzi klucza API! Sprawdź Settings w Vercel.");
         }
 
         const text = mainInput.value;
@@ -891,9 +891,9 @@ if (analyzeBtn && mainInput) {
 
         try {
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            const result = await model.generateContent(`Analizuj: ${text}`);
+            const result = await model.generateContent(`Przeanalizuj krótko pod kątem standardów demokratycznych: ${text}`);
             const response = await result.response;
-            alert("SUKCES! AI odpowiada: " + response.text().substring(0, 100));
+            alert("SUKCES! AI odpowiada: " + response.text());
         } catch (error) {
             alert("Błąd połączenia: " + error.message);
         } finally {
