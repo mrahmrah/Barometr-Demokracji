@@ -890,7 +890,7 @@ if (analyzeBtn && mainInput) {
         analyzeBtn.innerText = "Analizuję...";
 
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
             const result = await model.generateContent(`Przeanalizuj krótko pod kątem standardów demokratycznych: ${text}`);
             const response = await result.response;
             alert("SUKCES! AI odpowiada: " + response.text());
