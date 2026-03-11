@@ -871,8 +871,13 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
     });
 });
 // --- INTEGRACJA Z GEMINI AI ---
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
+if (!apiKey) {
+    console.error("UWAGA: Klucz API nie został wykryty! Sprawdź ustawienia Vercel lub plik .env");
+}
+
+const genAI = new GoogleGenerativeAI(apiKey);
 const analyzeBtn = document.querySelector('.analyze-democracy-btn');
 const mainInput = document.querySelector('.main-text-input');
 
