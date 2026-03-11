@@ -873,16 +873,16 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
 // --- INTEGRACJA Z GEMINI AI ---
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-if (!apiKey) {
-    console.error("UWAGA: Klucz API nie został wykryty! Sprawdź ustawienia Vercel lub plik .env");
-}
-
-const genAI = new GoogleGenerativeAI(apiKey);
 const analyzeBtn = document.querySelector('.analyze-democracy-btn');
 const mainInput = document.querySelector('.main-text-input');
 
 if (analyzeBtn && mainInput) {
     analyzeBtn.addEventListener('click', async () => {
+        // DIAGNOSTYKA - ZOBACZYMY TO NA EKRANIE
+        if (!apiKey) {
+            return alert("BŁĄD: Kod nie widzi klucza API! Sprawdź Vercel.");
+        }
+
         const text = mainInput.value;
         if (!text) return alert("Wklej tekst do analizy!");
 
@@ -891,21 +891,11 @@ if (analyzeBtn && mainInput) {
 
         try {
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            const prompt = `Przeanalizuj tekst jako Barometr Demokracji. Wykryj populizm i manipulację. Tekst: "${text}". Zwróć JSON: {"main_score": 85, "summary": "opis"}`;
-            
-            const result = await model.generateContent(prompt);
+            const result = await model.generateContent(`Analizuj: ${text}`);
             const response = await result.response;
-            
-            // Bezpieczne parsowanie JSON
-            const textResponse = response.text();
-            const cleanJson = textResponse.replace(/```json|```/g, '');
-            const data = JSON.parse(cleanJson);
-
-            alert("Analiza ukończona! Wynik: " + data.main_score + "/100");
-            
+            alert("SUKCES! AI odpowiada: " + response.text().substring(0, 100));
         } catch (error) {
-            console.error("Błąd Gemini:", error);
-            alert("Błąd połączenia z AI. Sprawdź konsolę (F12) lub plik .env");
+            alert("Błąd połączenia: " + error.message);
         } finally {
             analyzeBtn.style.opacity = "1";
             analyzeBtn.innerText = "Analizuj standardy";
