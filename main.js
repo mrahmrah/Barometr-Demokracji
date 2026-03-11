@@ -879,23 +879,27 @@ const mainInput = document.querySelector('.main-text-input');
 
 if (analyzeBtn && mainInput) {
     analyzeBtn.addEventListener('click', async () => {
-        if (!apiKey) {
-            return alert("BŁĄD: Kod nie widzi klucza API! Sprawdź Settings w Vercel.");
-        }
+        if (!apiKey) return alert("BŁĄD: Brak klucza API.");
 
         const text = mainInput.value;
-        if (!text) return alert("Wklej tekst do analizy!");
+        if (!text) return alert("Wklej tekst!");
 
         analyzeBtn.style.opacity = "0.5";
         analyzeBtn.innerText = "Analizuję...";
 
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-            const result = await model.generateContent(`Przeanalizuj krótko pod kątem standardów demokratycznych: ${text}`);
+            // Zmieniona nazwa modelu na wersję stabilną bez 'v1beta' w nazwie
+           const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: 'v1beta' });
+            
+            // Dodajemy wymuszenie wersji API (często naprawia 404)
+            const result = await model.generateContent(text);
             const response = await result.response;
+            
             alert("SUKCES! AI odpowiada: " + response.text());
         } catch (error) {
-            alert("Błąd połączenia: " + error.message);
+            // Jeśli to nadal wywali 404, spróbuj zamienić linię wyżej na:
+            // const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+            alert("Błąd: " + error.message);
         } finally {
             analyzeBtn.style.opacity = "1";
             analyzeBtn.innerText = "Analizuj standardy";
