@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barometr Demokracji - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Zobacz to, czego nie powiedziano: Landing Page -->
+        <div id="landing-view" class="landing-container">
+            <div class="landing-glass-card">
+                <div class="landing-logo-container">
+                    <span class="landing-icon">⚖️</span>
+                </div>
+                <h1 class="landing-title">Barometr Demokracji</h1>
+                <h2 class="landing-subtitle">Zobacz to, czego nie powiedziano</h2>
+                <div class="landing-grid">
+                    <div class="landing-card" data-target="analityk">
+                        <span class="card-icon">🔍</span>
+                        <h3>Analityk</h3>
+                        <p>Rozpruj tekst na warstwy i badaj demokratyczne standardy.</p>
+                    </div>
+                    <div class="landing-card" data-target="weryfikator">
+                        <span class="card-icon">🛡️</span>
+                        <h3>Weryfikator</h3>
+                        <p>Wykryj techniki manipulacji i błędy logiczne w locie.</p>
+                    </div>
+                    <div class="landing-card" data-target="slownik">
+                        <span class="card-icon">📖</span>
+                        <h3>Słownik Okłamanych</h3>
+                        <p>Poznaj oręż erystyków i definicje zdrowej demokracji.</p>
+                    </div>
+                    <div class="landing-card" data-target="przyklady">
+                        <span class="card-icon">💡</span>
+                        <h3>Biblioteka</h3>
+                        <p>Gotowe przykłady manipulacji ze świata polityki.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard (hidden by default) -->
+        <div id="dashboard-view" class="hidden">
+            <header class="header">
+            <a href="#" id="home-link" class="logo">
+                <span class="logo-icon">⚖️</span>
+                <h1>Barometr Demokracji</h1>
+            </a>
+        </header>
+
+        <nav class="tab-navigation glass">
+            <button class="tab-btn active" data-tab="analityk">Analityk</button>
+            <button class="tab-btn" data-tab="weryfikator">Weryfikator</button>
+            <button class="tab-btn" data-tab="test">Test</button>
+            <button class="tab-btn" data-tab="przyklady">Przykłady</button>
+            <button class="tab-btn" data-tab="przewodnik">Przewodnik</button>
+            <button class="tab-btn" data-tab="glossary">Glossary</button>
+        </nav>
+
+        <main class="dashboard-container">
+            <!-- Analityk Tab -->
+            <section id="analityk-tab" class="tab-content active">
+                <section class="input-section glass">
+                    <div class="section-header">
+                        <h2>Analiza Demokratyczna</h2>
+                        <p>Skupienie na parametrach demokratycznych i prawach człowieka.</p>
+                    </div>
+                    <textarea class="main-text-input" placeholder="Wklej tekst do analizy..."></textarea>
+                    <div class="input-actions">
+                        <button class="primary-btn analyze-democracy-btn">
+                            <span class="btn-text">Analizuj standardy</span>
+                            <div class="loader-ring"></div>
+                        </button>
+                        <button class="secondary-btn clear-btn">Wyczyść</button>
+                        <button class="magic-btn rephrase-btn hidden" id="analityk-rephrase-btn">
+                            <span class="btn-text">✨ Odczaruj manipulację</span>
+                        </button>
+                    </div>
+                </section>
+
+                <div class="rephrase-panel glass hidden" id="analityk-rephrase-panel">
+                    <div class="rephrase-header">
+                        <h3>Wersja oczyszczona z erystyki</h3>
+                        <button class="close-panel-btn" id="close-rephrase-btn">✕</button>
+                    </div>
+                    <div class="rephrased-content" id="analityk-rephrased-text"></div>
+                </div>
+
+                <div class="results-display hidden">
+                    <div class="results-grid">
+                        <div class="result-card glass score-card">
+                            <h3>Wynik Demokratyczny</h3>
+                            <div class="score-container">
+                                <div class="score-ring">
+                                    <svg viewBox="0 0 140 140" width="140" height="140"><circle cx="70" cy="70" r="60"></circle><circle class="score-circle" cx="70" cy="70" r="60"></circle></svg>
+                                    <div class="score-value"><span class="score-number">0</span><small>/100</small></div>
+                                </div>
+                            </div>
+                            <p class="score-label">Obliczanie...</p>
+                            
+                            <div class="ogik-metrics hidden" id="analityk-ogik-metrics">
+                                <div class="emotion-meter-container">
+                                    <div class="meter-label">Temperatura Debaty</div>
+                                    <div class="emotion-meter">
+                                        <div class="emotion-pointer" id="analityk-emotion-pointer"></div>
+                                    </div>
+                                </div>
+                                <div class="dogma-counter" id="analityk-dogma-counter">
+                                    <span class="dogma-icon">🔒</span>
+                                    <span class="dogma-value" id="analityk-dogma-value">0</span>
+                                    <div class="dogma-tooltip" id="analityk-dogma-tooltip"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="result-card glass deconstruction-card full-width">
+                            <div class="decon-header">
+                                <span class="badge">PROTOKÓŁ AI</span>
+                                <h3>Głęboka Dekonstrukcja</h3>
+                            </div>
+                            <div class="deconstruction-layers">
+                                <div class="decon-layer" data-layer="semantic">
+                                    <h4><i class="layer-icon">🔤</i> Warstwa Semantyczna</h4>
+                                    <div class="layer-content" id="analityk-semantic-list"></div>
+                                </div>
+                                <div class="decon-layer" data-layer="ideological">
+                                    <h4><i class="layer-icon">🧠</i> Fundamenty Ideologiczne</h4>
+                                    <div class="layer-content" id="analityk-ideological-text"></div>
+                                </div>
+                                <div class="decon-layer" data-layer="logical">
+                                    <h4><i class="layer-icon">⚖️</i> Bezlitosna Logika (Błędy)</h4>
+                                    <div class="layer-content" id="analityk-logical-list"></div>
+                                </div>
+                                <div class="decon-layer" data-layer="rebuttal">
+                                    <h4><i class="layer-icon">❓</i> Pytania Obnażające Słabość</h4>
+                                    <div class="layer-content" id="analityk-rebuttal-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="result-card glass suggestions-card full-width">
+                            <h3>Rekomendacje Strategiczne</h3>
+                            <ul class="suggestions-list"></ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Weryfikator Tab -->
+            <section id="weryfikator-tab" class="tab-content">
+                <section class="input-section glass">
+                    <div class="section-header">
+                        <h2>Weryfikator Erystyczny</h2>
+                        <p>Wykrywanie manipulacji, błędów logicznych i technik erystycznych.</p>
+                    </div>
+                    <textarea class="main-text-input" placeholder="Wklej tekst do weryfikacji technik..."></textarea>
+                    <div class="input-actions">
+                        <button class="primary-btn verify-eristics-btn">
+                            <span class="btn-text">Weryfikuj techniki</span>
+                            <div class="loader-ring"></div>
+                        </button>
+                        <button class="secondary-btn clear-btn">Wyczyść</button>
+                    </div>
+                </section>
+                <div class="results-display hidden">
+                    <div class="results-grid">
+                        <div class="result-card glass deconstruction-card full-width">
+                            <div class="decon-header">
+                                <span class="badge">PROTOKÓŁ AI</span>
+                                <h3>Analiza Manipulacji</h3>
+                            </div>
+                            <div class="deconstruction-layers">
+                                <div class="decon-layer" data-layer="semantic">
+                                    <h4><i class="layer-icon">🔤</i> Warstwa Semantyczna</h4>
+                                    <div class="layer-content" id="weryfikator-semantic-list"></div>
+                                </div>
+                                <div class="decon-layer" data-layer="ideological">
+                                    <h4><i class="layer-icon">🧠</i> Fundamenty Ideologiczne</h4>
+                                    <div class="layer-content" id="weryfikator-ideological-text"></div>
+                                </div>
+                                <div class="decon-layer" data-layer="logical">
+                                    <h4><i class="layer-icon">⚖️</i> Bezlitosna Logika (Błędy)</h4>
+                                    <div class="layer-content" id="weryfikator-logical-list"></div>
+                                </div>
+                                <div class="decon-layer" data-layer="rebuttal">
+                                    <h4><i class="layer-icon">❓</i> Pytania Obnażające Słabość</h4>
+                                    <div class="layer-content" id="weryfikator-rebuttal-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="result-card glass suggestions-card full-width">
+                            <h3>Strategia Kontrargumentacji</h3>
+                            <ul class="counter-list"></ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Test Tab -->
+            <section id="test-tab" class="tab-content">
+                <div class="test-layout-grid">
+                    <div class="test-sidebar glass">
+                        <h3>Wybierz Test</h3>
+                        <button class="test-nav-btn active" data-test="sensitivity">Test Wrażliwości</button>
+                        <button class="test-nav-btn" data-test="generated">Analiza Wyników (AI)</button>
+                    </div>
+                    <div class="test-main-content glass">
+                        <!-- Sensitivity Test Section -->
+                        <div id="sensitivity-test-view" class="test-view active">
+                            <div class="quiz-header">
+                                <h2>Test Wrażliwości Demokratycznej</h2>
+                                <p>Sprawdź swoją intuicję w rozpoznawaniu standardów demokratycznych w codziennych sytuacjach.</p>
+                            </div>
+                            <div id="standalone-test-container">
+                                <div class="start-test-hero">
+                                    <p>Ten test składa się z 10 pytań sytuacyjnych. Pomoże Ci on ocenić, jak bardzo jesteś wrażliwy na mechanizmy manipulacji i standardy ochrony praw człowieka.</p>
+                                    <button id="start-sensitivity-test" class="primary-btn">Rozpocznij Test</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generated Quiz Section -->
+                        <div id="generated-test-view" class="test-view">
+                            <div class="quiz-header">
+                                <h2>Analiza Twojego Tekstu</h2>
+                                <p>Quiz wygenerowany przez Educator Agent na podstawie ostatniej analizy.</p>
+                            </div>
+                            <div class="generated-quiz-container">
+                                <div class="quiz-placeholder">Przejdź do zakładki Analityk lub Weryfikator i wykonaj analizę, aby wygenerować test.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Przyklady Tab -->
+            <section id="przyklady-tab" class="tab-content">
+                <div class="samples-grid">
+                    <!-- Samples will be injected here -->
+                </div>
+            </section>
+
+            <!-- Przewodnik Tab -->
+            <section id="przewodnik-tab" class="tab-content">
+                <div class="guide-content glass">
+                    <h2>Misja Barometru Demokracji</h2>
+                    <p>Barometr Demokracji to narzędzie stworzone w celu wspierania świadomości społecznej na temat standardów demokratycznej debaty. Naszą misją jest edukacja w zakresie rozpoznawania manipulacji oraz promowanie języka inkluzywnego.</p>
+                    <h3>Jak korzystać z aplikacji?</h3>
+                    <ol>
+                        <li><strong>Analityk:</strong> Wklej tekst, aby sprawdzić go pod kątem zgodności z wartościami demokratycznymi.</li>
+                        <li><strong>Weryfikator:</strong> Dowiedz się, jakie techniki erystyczne i błędy logiczne zostały użyte, by wpłynąć na Twój odbiór.</li>
+                        <li><strong>Test:</strong> Sprawdź swoje zrozumienie analizowanego tekstu poprzez interaktywny quiz.</li>
+                        <li><strong>Glossary:</strong> Szybko sprawdź definicje trudnych pojęć.</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Glossary Tab -->
+            <section id="glossary-tab" class="tab-content">
+                <div class="glossary-container">
+                    <div class="glossary-sidebar glass">
+                        <div class="glossary-sidebar-header">
+                            <input type="text" id="glossary-search-input" placeholder="Szukaj pojęcia...">
+                            <div class="glossary-filters">
+                                <button class="filter-btn active" data-category="all">Wszystkie</button>
+                                <button class="filter-btn" data-category="demokracja">Demokracja</button>
+                                <button class="filter-btn" data-category="manipulacja">Manipulacja</button>
+                                <button class="filter-btn" data-category="erystyka">Erystyka</button>
+                            </div>
+                        </div>
+                        <div class="glossary-menu" id="glossary-menu-list">
+                            <!-- Sidebar items injected here -->
+                        </div>
+                    </div>
+                    <div class="glossary-detail glass">
+                        <div id="glossary-detail-panel">
+                            <div class="empty-state">
+                                <p>Wybierz hasło z listy po lewej stronie, aby zobaczyć definicję i przykłady.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2026 Barometr Demokracji - Narzędzie Edukacyjne</p>
+        </footer>
+        </div> <!-- End of #dashboard-view -->
+    </div>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
