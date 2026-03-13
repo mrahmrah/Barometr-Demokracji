@@ -861,7 +861,6 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
         tab.querySelector('.main-text-input').value = '';
         tab.querySelector('.results-display').classList.add('hidden');
         
-        // Hide OGIK extensions
         const ogikContainer = tab.querySelector('.ogik-metrics');
         if (ogikContainer) ogikContainer.classList.add('hidden');
         const rephraseBtn = tab.querySelector('.rephrase-btn');
@@ -870,7 +869,8 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
         if (rephrasePanel) rephrasePanel.classList.add('hidden');
     });
 });
-// --- INTEGRACJA Z GEMINI AI ---
+
+// 2. INTEGRACJA Z GEMINI AI
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -885,16 +885,18 @@ if (analyzeBtn && mainInput) {
         analyzeBtn.disabled = true;
         analyzeBtn.innerText = "Analizuję...";
 
-    try {
-            // Używamy modelu 1.5-flash (najnowszego), usuwamy ręczne apiVersion: "v1"
-            // Biblioteka sama dobierze najlepszą ścieżkę
+        try {
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
             const result = await model.generateContent(text);
             const response = await result.response;
+            
             alert("SUKCES! AI ODPOWIADA: " + response.text());
+            
         } catch (error) {
-            // Jeśli nadal będzie 404, to znaczy, że klucz API w Netlify/Vercel 
-            // nie został poprawnie odświeżony
             alert("BŁĄD GOOGLE: " + error.message);
+        } finally {
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerText = "Analizuj standardy";
         }
+    });
+}
