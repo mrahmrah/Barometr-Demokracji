@@ -879,35 +879,26 @@ const mainInput = document.querySelector('.main-text-input');
 
 if (analyzeBtn && mainInput) {
     analyzeBtn.addEventListener('click', async () => {
-        if (!apiKey) return alert("BŁĄD: Brak klucza API w systemie.");
-
         const text = mainInput.value;
-        if (!text) return alert("Wklej tekst do analizy!");
+        if (!text) return alert("Wklej tekst!");
 
-        // Blokujemy przycisk, żeby uniknąć podwójnych kliknięć
         analyzeBtn.disabled = true;
-        analyzeBtn.style.opacity = "0.5";
         analyzeBtn.innerText = "Analizuję...";
 
         try {
-            // Zmiana: wymuszamy stabilną wersję modelu
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-            
-            // Wysyłamy zapytanie
+            // WYMUSZAMY WERSJĘ V1 - to powinno zabić błąd 404
+            const model = genAI.getGenerativeModel(
+                { model: "gemini-1.5-flash" }, 
+                { apiVersion: "v1" }
+            );
+
             const result = await model.generateContent(text);
             const response = await result.response;
-            const output = response.text();
-            
-            alert("ANALIZA UKOŃCZONA:\n\n" + output);
-            
+            alert("SUKCES! AI ODPOWIADA: " + response.text());
         } catch (error) {
-            console.error("Szczegóły błędu:", error);
-            // Jeśli 404 powróci, wyświetlimy czytelniejszy komunikat
-            alert("Błąd: " + error.message);
+            alert("BŁĄD: " + error.message);
         } finally {
-            // KLUCZOWE: Odblokowujemy przycisk, żeby można było analizować kolejny raz
             analyzeBtn.disabled = false;
-            analyzeBtn.style.opacity = "1";
             analyzeBtn.innerText = "Analizuj standardy";
         }
     });
