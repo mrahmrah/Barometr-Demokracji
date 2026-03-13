@@ -891,7 +891,7 @@ if (analyzeBtn && mainInput) {
 
         try {
             // Zmiana: wymuszamy stabilną wersję modelu
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
             
             // Wysyłamy zapytanie
             const result = await model.generateContent(text);
