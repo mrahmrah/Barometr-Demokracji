@@ -886,13 +886,13 @@ if (analyzeBtn && mainInput) {
         analyzeBtn.innerText = "Analizuję...";
 
         try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(text);
-    const response = await result.response;
-    alert("WERSJA FINALNA 2.0: " + response.text());
-} catch (error) {
-    alert("BŁĄD GOOGLE: " + error.message);
-} finally {
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const result = await model.generateContent(text);
+            const response = await result.response;
+            alert("WERSJA 2.0 DZIAŁA!!! Odpowiedź: " + response.text());
+        } catch (error) {
+            alert("BŁĄD GOOGLE: " + error.message);
+        } finally {
             analyzeBtn.disabled = false;
             analyzeBtn.innerText = "Analizuj standardy";
         }
