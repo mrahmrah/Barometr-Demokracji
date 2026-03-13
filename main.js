@@ -880,19 +880,34 @@ const mainInput = document.querySelector('.main-text-input');
 if (analyzeBtn && mainInput) {
     analyzeBtn.addEventListener('click', async () => {
         const text = mainInput.value;
-        if (!text) return alert("Wklej tekst!");
+        
+        if (!text) {
+            return alert("Proszę wkleić tekst do analizy!");
+        }
 
+        // Blokada przycisku na czas generowania
         analyzeBtn.disabled = true;
-        analyzeBtn.innerText = "Analizuję...";
+        analyzeBtn.innerText = "Analizuję (v1)...";
 
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            // WYMUSZENIE WERSJI v1 - to naprawia błąd 404
+            const model = genAI.getGenerativeModel(
+                { model: "gemini-1.5-flash" },
+                { apiVersion: 'v1' }
+            );
+
             const result = await model.generateContent(text);
             const response = await result.response;
-            alert("WERSJA 2.0 DZIAŁA!!! Odpowiedź: " + response.text());
+            const responseText = response.text();
+            
+            // Wyświetlenie wyniku
+            alert("SUKCES! Odpowiedź AI:\n\n" + responseText);
+            
         } catch (error) {
+            console.error("Szczegóły błędu:", error);
             alert("BŁĄD GOOGLE: " + error.message);
         } finally {
+            // Przywrócenie przycisku
             analyzeBtn.disabled = false;
             analyzeBtn.innerText = "Analizuj standardy";
         }
