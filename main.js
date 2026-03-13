@@ -886,21 +886,15 @@ if (analyzeBtn && mainInput) {
         analyzeBtn.innerText = "Analizuję...";
 
     try {
-            // WYMUSZAMY WERSJĘ V1 - to powinno zabić błąd 404
-            const model = genAI.getGenerativeModel(
-                { model: "gemini-1.0-pro" }, 
-                { apiVersion: "v1" }
-            );
+            // Używamy modelu 1.5-flash (najnowszego), usuwamy ręczne apiVersion: "v1"
+            // Biblioteka sama dobierze najlepszą ścieżkę
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
             const result = await model.generateContent(text);
             const response = await result.response;
             alert("SUKCES! AI ODPOWIADA: " + response.text());
         } catch (error) {
-            alert("BŁĄD: " + error.message);
-        } finally {
-            // Tutaj musi być tylko jedno zamknięcie klamry przed finally
-            analyzeBtn.disabled = false;
-            analyzeBtn.innerText = "Analizuj standardy";
+            // Jeśli nadal będzie 404, to znaczy, że klucz API w Netlify/Vercel 
+            // nie został poprawnie odświeżony
+            alert("BŁĄD GOOGLE: " + error.message);
         }
-    });
-}
