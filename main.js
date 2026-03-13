@@ -885,10 +885,10 @@ if (analyzeBtn && mainInput) {
         analyzeBtn.disabled = true;
         analyzeBtn.innerText = "Analizuję...";
 
-        try {
+     try {
             // WYMUSZAMY WERSJĘ V1 - to powinno zabić błąd 404
             const model = genAI.getGenerativeModel(
-                { model: "gemini-1.5-flash" }, 
+                { model: "gemini-1.0-pro" }, 
                 { apiVersion: "v1" }
             );
 
@@ -897,6 +897,7 @@ if (analyzeBtn && mainInput) {
             alert("SUKCES! AI ODPOWIADA: " + response.text());
         } catch (error) {
             alert("BŁĄD: " + error.message);
+        }
         } finally {
             analyzeBtn.disabled = false;
             analyzeBtn.innerText = "Analizuj standardy";
