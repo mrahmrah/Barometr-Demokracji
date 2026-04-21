@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { glossary } from './glossary';
 import { samples } from './data/samples';
 import { modelAnalyses } from './data/model_analyses';
@@ -870,9 +869,8 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
     });
 });
 
-// 2. INTEGRACJA Z GEMINI AI
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey);
+// 2. INTEGRACJA Z GEMINI AI (przez Cloudflare Worker — klucz API bezpieczny po stronie serwera)
+const WORKER_URL = import.meta.env.VITE_WORKER_URL;
 
 const analyzeBtn = document.querySelector('.analyze-democracy-btn');
 const mainInput = document.querySelector('.main-text-input');
@@ -880,36 +878,37 @@ const mainInput = document.querySelector('.main-text-input');
 if (analyzeBtn && mainInput) {
     analyzeBtn.addEventListener('click', async () => {
         const text = mainInput.value;
-        
+
         if (!text) {
-            return alert("Proszę wkleić tekst do analizy!");
+            return alert('Proszę wkleić tekst do analizy!');
         }
 
-        // Blokada przycisku na czas generowania
         analyzeBtn.disabled = true;
-        analyzeBtn.innerText = "Analizuję (v1)...";
+        analyzeBtn.innerText = 'Analizuję...';
 
         try {
-            // WYMUSZENIE WERSJI v1 - to naprawia błąd 404
-            const model = genAI.getGenerativeModel(
-                { model: "gemini-1.5-flash" },
-                { apiVersion: 'v1' }
-            );
+            const res = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text }),
+            });
 
-            const result = await model.generateContent(text);
-            const response = await result.response;
-            const responseText = response.text();
-            
-            // Wyświetlenie wyniku
-            alert("SUKCES! Odpowiedź AI:\n\n" + responseText);
-            
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: res.statusText }));
+                throw new Error(err.error ?? 'Nieznany błąd serwera');
+            }
+
+            const { result } = await res.json();
+            alert('Odpowiedź AI:
+
+' + result);
+
         } catch (error) {
-            console.error("Szczegóły błędu:", error);
-            alert("BŁĄD GOOGLE: " + error.message);
+            console.error('Szczegóły błędu:', error);
+            alert('Błąd: ' + error.message);
         } finally {
-            // Przywrócenie przycisku
             analyzeBtn.disabled = false;
-            analyzeBtn.innerText = "Analizuj standardy";
+            analyzeBtn.innerText = 'Analizuj standardy';
         }
     });
 }
