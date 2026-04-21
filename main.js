@@ -343,68 +343,142 @@ function renderTestResults() {
 // (Keeping it concise for the agent response but fully functional in actual file)
 
 // --- Tab: Analityk ---
-document.querySelector('.analyze-democracy-btn').addEventListener('click', function() {
+document.querySelector('.analyze-democracy-btn').addEventListener('click', async function() {
     const input = document.querySelector('#analityk-tab .main-text-input');
     const text = input.value.trim();
-    if (!text) return alert('Wklej tekst!');
+    if (!text) return alert('Wklej tekst do analizy!');
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) return alert('Brak klucza API. Utwórz plik .env z VITE_GEMINI_API_KEY.');
 
     startLoading(this);
-    
-    setTimeout(() => {
-        const results = callAnalystAgent(text);
+    const self = this;
+
+    const promptParts = [
+        'Jesteś eksperckim analitykiem retoryki demokratycznej i psychologii społecznej. Przeprowadź głęboką, wielowarstwową analizę poniższego tekstu pod kątem standardów demokratycznych, technik manipulacji i ładunku ideologicznego.',
+        '',
+        'Zwróć WYŁĄCZNIE poprawny obiekt JSON (zero markdown, zero wyjaśnień poza JSON):',
+        '{"democracy_score":0,"verdict":"jedno precyzyjne zdanie oceniające tekst","manipulation_summary":"2-3 zdania opisujące główne techniki manipulacji","semantic_deconstruction":[{"fragment":"cytowany fragment","technique":"nazwa techniki np. Dehumanizacja, Weasel Word, Dog Whistle, Othering, Scapegoating","analysis":"głęboka analiza 2-3 zdania","impact":"konkretny wpływ na dyskurs demokratyczny","severity":"LOW lub MEDIUM lub HIGH lub CRITICAL"}],"logical_errors":[{"technique_name":"nazwa błędu np. Ad Hominem, Strawman, Fałszywa Dychotomia, Slippery Slope, Appeal to Fear","quote":"dokładny cytat","description":"wyjaśnienie błędu 2-3 zdania","severity":"LOW lub MEDIUM lub HIGH lub CRITICAL"}],"ideological_foundation":"analiza fundamentów ideologicznych 3-4 zdania","rebuttal_questions":["pytanie 1","pytanie 2","pytanie 3"],"emotional_temperature":25,"dogma_counter":["zwrot dogmatyczny"],"rephrased_text":"demokratyczna wersja tekstu","suggestions":["rekomendacja 1","rekomendacja 2"],"context":"kontekst historyczny lub polityczny lub null"}',
+        '',
+        'Analizuj w języku polskim. Wykryj WSZYSTKIE techniki manipulacji. Dla każdego fragmentu podaj konkretną nazwę techniki. Bądź precyzyjny i merytoryczny.',
+        '',
+        'Tekst do analizy:',
+        text
+    ];
+    const prompt = promptParts.join('\n');
+
+    try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-2.5-flash',
+            generationConfig: {
+                responseMimeType: 'application/json',
+                thinkingConfig: { thinkingBudget: 0 }
+            }
+        });
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const responseText = response.text();
+
+        let results;
+        try {
+            results = JSON.parse(responseText);
+        } catch (e) {
+            const match = responseText.match(/\{[\s\S]*\}/);
+            if (match) results = JSON.parse(match[0]);
+            else throw new Error('Nie udało się przetworzyć odpowiedzi AI. Spróbuj ponownie.');
+        }
+
+        results.dogma_counter = results.dogma_counter || [];
+        results.emotional_temperature = results.emotional_temperature || 25;
+        results.rephrased_text = results.rephrased_text || '';
+        results.suggestions = results.suggestions || [];
+        results.semantic_deconstruction = results.semantic_deconstruction || [];
+        results.logical_errors = results.logical_errors || [];
+        results.rebuttal_questions = results.rebuttal_questions || [];
+
         const display = document.querySelector('#analityk-tab .results-display');
         display.classList.remove('hidden');
-        
+
+        renderVerdictBanner(results.verdict, results.democracy_score, results.manipulation_summary);
         updateScore(results.democracy_score, '#analityk-tab');
-        
-        // Populate Deconstruction Layers
         renderDeconList(results.semantic_deconstruction, '#analityk-semantic-list', 'semantic');
-        document.getElementById('analityk-ideological-text').innerText = results.ideological_foundation;
+        document.getElementById('analityk-ideological-text').innerText = results.ideological_foundation || '';
         renderDeconList(results.logical_errors, '#analityk-logical-list', 'logical');
         renderSimpleList(results.rebuttal_questions, '#analityk-rebuttal-list', 'rebuttal-item');
+        renderSimpleList(results.suggestions, '#analityk-tab .suggestions-list', 'suggestion-item');
 
-        renderSimpleList(results.suggestions || [], '#analityk-tab .suggestions-list', 'suggestion-item');
-        
-        // Populate OGIK Elements
         const ogikContainer = document.getElementById('analityk-ogik-metrics');
         ogikContainer.classList.remove('hidden');
-        
-        // Emotion Meter
-        const emotionPointer = document.getElementById('analityk-emotion-pointer');
-        setTimeout(() => { emotionPointer.style.left = `${results.emotional_temperature}%`; }, 100);
-        
-        // Dogma Counter
+        setTimeout(function() {
+            document.getElementById('analityk-emotion-pointer').style.left = results.emotional_temperature + '%';
+        }, 100);
+
         const dogmaValue = document.getElementById('analityk-dogma-value');
         const dogmaTooltip = document.getElementById('analityk-dogma-tooltip');
         dogmaValue.innerText = results.dogma_counter.length;
-        if (results.dogma_counter.length > 0) {
-            dogmaTooltip.innerHTML = `<h4>Wykryte Dogmaty (${results.dogma_counter.length}):</h4><ul>` + 
-                results.dogma_counter.map(d => `<li>${d}</li>`).join('') + `</ul>`;
-        } else {
-            dogmaTooltip.innerHTML = `<span>Brak wykrytych zwrotów dogmatycznych.</span>`;
-        }
+        dogmaTooltip.innerHTML = results.dogma_counter.length > 0
+            ? '<h4>Wykryte Dogmaty (' + results.dogma_counter.length + '):</h4><ul>' + results.dogma_counter.map(function(d){ return '<li>' + d + '</li>'; }).join('') + '</ul>'
+            : '<span>Brak wykrytych zwrotów dogmatycznych.</span>';
 
-        // Rephrase Tool
         const rephraseBtn = document.getElementById('analityk-rephrase-btn');
         const rephraseText = document.getElementById('analityk-rephrased-text');
         const rephrasePanel = document.getElementById('analityk-rephrase-panel');
-        
         rephraseBtn.classList.remove('hidden');
         rephraseText.innerText = results.rephrased_text;
-        
-        // Reset panel state if open
-        if (!rephrasePanel.classList.contains('hidden')) {
-            rephrasePanel.classList.add('hidden');
-        }
+        if (!rephrasePanel.classList.contains('hidden')) rephrasePanel.classList.add('hidden');
+
+        renderContextCard(results.context);
 
         const eduResults = callEducatorAgent(text, 'democracy');
         currentQuiz = eduResults.quiz;
         updateQuizPlaceholder();
-        
-        stopLoading(this);
+
         display.scrollIntoView({ behavior: 'smooth' });
-    }, 1500);
+
+    } catch (error) {
+        console.error('Błąd analizy:', error);
+        alert('Błąd analizy: ' + error.message);
+    } finally {
+        stopLoading(self);
+    }
 });
+
+function renderVerdictBanner(verdict, score, manipulation_summary) {
+    let banner = document.getElementById('analityk-verdict-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'analityk-verdict-banner';
+        const display = document.querySelector('#analityk-tab .results-display');
+        display.insertBefore(banner, display.firstChild);
+    }
+    const level = score > 70 ? 'safe' : score > 40 ? 'warning' : 'danger';
+    const icon = score > 70 ? '✅' : score > 40 ? '⚠️' : '🚨';
+    banner.className = 'verdict-banner verdict-' + level;
+    banner.innerHTML =
+        '<div class="verdict-icon">' + icon + '</div>' +
+        '<div class="verdict-content">' +
+            '<div class="verdict-text">' + (verdict || '') + '</div>' +
+            (manipulation_summary ? '<div class="manipulation-summary">' + manipulation_summary + '</div>' : '') +
+        '</div>';
+}
+
+function renderContextCard(context) {
+    let card = document.getElementById('analityk-context-card');
+    if (!context) { if (card) card.remove(); return; }
+    if (!card) {
+        card = document.createElement('div');
+        card.id = 'analityk-context-card';
+        card.className = 'result-card glass context-card full-width';
+        const suggestionsCard = document.querySelector('#analityk-tab .suggestions-card');
+        if (suggestionsCard) suggestionsCard.insertAdjacentElement('afterend', card);
+    }
+    card.innerHTML =
+        '<div class="decon-header"><span class="badge">KONTEKST</span><h3>Kontekst Historyczny i Polityczny</h3></div>' +
+        '<p class="context-text">' + context + '</p>';
+}
+
 
 // Rephrase Button Logic
 document.getElementById('analityk-rephrase-btn').addEventListener('click', () => {
@@ -589,22 +663,27 @@ function renderDeconList(items, selector, type) {
     if (!container) return;
     container.innerHTML = '';
 
-    items.forEach(item => {
+    items.forEach(function(item) {
         const card = document.createElement('div');
-        card.className = `decon-item-card ${type}-item`;
-        
+        card.className = 'decon-item-card ' + type + '-item';
+        const sev = item.severity || '';
+        const sevBadge = sev ? '<span class="severity-badge severity-' + sev.toLowerCase() + '">' + sev + '</span>' : '';
         if (type === 'semantic') {
-            card.innerHTML = `
-                <div class="item-fragment">"${item.fragment}"</div>
-                <div class="item-analysis">${item.analysis}</div>
-                <div class="item-impact"><strong>Wpływ:</strong> ${item.impact}</div>
-            `;
+            card.innerHTML =
+                '<div class="item-header">' +
+                    '<div class="item-fragment">&ldquo;' + item.fragment + '&rdquo;</div>' +
+                    '<div class="item-badges">' + (item.technique ? '<span class="technique-badge">' + item.technique + '</span>' : '') + sevBadge + '</div>' +
+                '</div>' +
+                '<div class="item-analysis">' + item.analysis + '</div>' +
+                '<div class="item-impact"><strong>Wpływ:</strong> ' + item.impact + '</div>';
         } else if (type === 'logical') {
-            card.innerHTML = `
-                <div class="item-tech-name">${item.technique_name}</div>
-                <div class="item-quote">"${item.quote}"</div>
-                <div class="item-description">${item.description}</div>
-            `;
+            card.innerHTML =
+                '<div class="item-header">' +
+                    '<div class="item-tech-name">' + item.technique_name + '</div>' +
+                    sevBadge +
+                '</div>' +
+                '<div class="item-quote">&ldquo;' + item.quote + '&rdquo;</div>' +
+                '<div class="item-description">' + item.description + '</div>';
         }
         container.appendChild(card);
     });
@@ -872,41 +951,3 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
         if (rephrasePanel) rephrasePanel.classList.add('hidden');
     });
 });
-
-// 2. INTEGRACJA Z GEMINI AI
-const analyzeBtn = document.querySelector('.analyze-democracy-btn');
-const mainInput = document.querySelector('.main-text-input');
-
-if (analyzeBtn && mainInput) {
-    analyzeBtn.addEventListener('click', async () => {
-        const text = mainInput.value;
-
-        if (!text) {
-            return alert('Proszę wkleić tekst do analizy!');
-        }
-
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        if (!apiKey) {
-            return alert('Brak klucza API. Utwórz plik .env z VITE_GEMINI_API_KEY.');
-        }
-
-        analyzeBtn.disabled = true;
-        analyzeBtn.innerText = 'Analizuję...';
-
-        try {
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', generationConfig: { thinkingConfig: { thinkingBudget: 0 } } });
-            const result = await model.generateContent(text);
-            const response = await result.response;
-            const responseText = response.text();
-            alert('Odpowiedź AI: ' + responseText);
-
-        } catch (error) {
-            console.error('Szczegóły błędu:', error);
-            alert('Błąd: ' + error.message);
-        } finally {
-            analyzeBtn.disabled = false;
-            analyzeBtn.innerText = 'Analizuj standardy';
-        }
-    });
-}
