@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { glossary } from './glossary';
 import { samples } from './data/samples';
 import { modelAnalyses } from './data/model_analyses';
@@ -865,12 +866,9 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
         const rephraseBtn = tab.querySelector('.rephrase-btn');
         if (rephraseBtn) rephraseBtn.classList.add('hidden');
         const rephrasePanel = tab.querySelector('.rephrase-panel');
-        if (rephrasePanel) rephrasePanel.classList.add('hidden');
-    });
-});
-
-// 2. INTEGRACJA Z GEMINI AI (przez Cloudflare Worker — klucz API bezpieczny po stronie serwera)
-const WORKER_URL = import.meta.env.VITE_WORKER_URL;
+        if (rephras// 2. INTEGRACJA Z GEMINI AI
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(apiKey);
 
 const analyzeBtn = document.querySelector('.analyze-democracy-btn');
 const mainInput = document.querySelector('.main-text-input');
@@ -887,10 +885,27 @@ if (analyzeBtn && mainInput) {
         analyzeBtn.innerText = 'Analizuję...';
 
         try {
-            const res = await fetch(WORKER_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text }),
+            const model = genAI.getGenerativeModel(
+                { model: 'gemini-1.5-flash' },
+                { apiVersion: 'v1' }
+            );
+
+            const result = await model.generateContent(text);
+            const response = await result.response;
+            const responseText = response.text();
+
+            alert('Odpowiedź AI:
+
+' + responseText);
+
+        } catch (error) {
+            console.error('Szczegóły błędu:', error);
+            alert('Błąd: ' + error.message);
+        } finally {
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerText = 'Analizuj standardy';
+        }
+    });             body: JSON.stringify({ text }),
             });
 
             if (!res.ok) {
