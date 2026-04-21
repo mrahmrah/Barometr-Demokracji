@@ -700,6 +700,9 @@ function callAnalystAgent(text) {
     if (matchedAnalysis) {
         return {
             ...matchedAnalysis,
+            dogma_counter: matchedAnalysis.dogma_counter || [],
+            emotional_temperature: matchedAnalysis.emotional_temperature || 50,
+            rephrased_text: matchedAnalysis.rephrased_text || '',
             suggestions: [
                 'Przeanalizuj dokładnie wskazane fragmenty semantyczne.',
                 'Zwróć uwagę na błędy logiczne i spróbuj zadać pytania obnażające słabość tekstów.'
