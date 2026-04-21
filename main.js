@@ -896,34 +896,12 @@ if (analyzeBtn && mainInput) {
                 { model: 'gemini-1.5-flash' },
                 { apiVersion: 'v1' }
             );
-
             const result = await model.generateContent(text);
             const response = await result.response;
             const responseText = response.text();
-
             alert('Odpowiedź AI:
 
 ' + responseText);
-
-        } catch (error) {
-            console.error('Szczegóły błędu:', error);
-            alert('Błąd: ' + error.message);
-        } finally {
-            analyzeBtn.disabled = false;
-            analyzeBtn.innerText = 'Analizuj standardy';
-        }
-    });             body: JSON.stringify({ text }),
-            });
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({ error: res.statusText }));
-                throw new Error(err.error ?? 'Nieznany błąd serwera');
-            }
-
-            const { result } = await res.json();
-            alert('Odpowiedź AI:
-
-' + result);
 
         } catch (error) {
             console.error('Szczegóły błędu:', error);
