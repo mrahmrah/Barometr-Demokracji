@@ -866,7 +866,11 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
         const rephraseBtn = tab.querySelector('.rephrase-btn');
         if (rephraseBtn) rephraseBtn.classList.add('hidden');
         const rephrasePanel = tab.querySelector('.rephrase-panel');
-        if (rephras// 2. INTEGRACJA Z GEMINI AI
+        if (rephrasePanel) rephrasePanel.classList.add('hidden');
+    });
+});
+
+// 2. INTEGRACJA Z GEMINI AI
 const analyzeBtn = document.querySelector('.analyze-democracy-btn');
 const mainInput = document.querySelector('.main-text-input');
 
