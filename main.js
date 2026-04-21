@@ -867,9 +867,6 @@ document.querySelectorAll('.clear-btn').forEach(btn => {
         if (rephraseBtn) rephraseBtn.classList.add('hidden');
         const rephrasePanel = tab.querySelector('.rephrase-panel');
         if (rephras// 2. INTEGRACJA Z GEMINI AI
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey);
-
 const analyzeBtn = document.querySelector('.analyze-democracy-btn');
 const mainInput = document.querySelector('.main-text-input');
 
@@ -881,10 +878,16 @@ if (analyzeBtn && mainInput) {
             return alert('Proszę wkleić tekst do analizy!');
         }
 
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        if (!apiKey) {
+            return alert('Brak klucza API. Utwórz plik .env z VITE_GEMINI_API_KEY.');
+        }
+
         analyzeBtn.disabled = true;
         analyzeBtn.innerText = 'Analizuję...';
 
         try {
+            const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel(
                 { model: 'gemini-1.5-flash' },
                 { apiVersion: 'v1' }
