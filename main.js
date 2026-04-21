@@ -899,9 +899,7 @@ if (analyzeBtn && mainInput) {
             const result = await model.generateContent(text);
             const response = await result.response;
             const responseText = response.text();
-            alert('Odpowiedź AI:
-
-' + responseText);
+            alert('Odpowiedź AI: ' + responseText);
 
         } catch (error) {
             console.error('Szczegóły błędu:', error);
