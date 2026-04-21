@@ -568,34 +568,145 @@ document.getElementById('close-rephrase-btn').addEventListener('click', () => {
 });
 
 // --- Tab: Weryfikator ---
-document.querySelector('.verify-eristics-btn').addEventListener('click', function() {
+document.querySelector('.verify-eristics-btn').addEventListener('click', async function() {
     const input = document.querySelector('#weryfikator-tab .main-text-input');
     const text = input.value.trim();
-    if (!text) return alert('Wklej tekst!');
+    if (!text) return alert('Wklej tekst do weryfikacji!');
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) return alert('Brak klucza API. Utwórz plik .env z VITE_GEMINI_API_KEY.');
 
     startLoading(this);
-    
-    setTimeout(() => {
-        const results = callVerifierAgent(text);
+    const self = this;
+
+    const promptParts = [
+        'Jesteś mistrzem erystyki i ekspertem psychologii wpływu społecznego. Twoim zadaniem jest bezlitosna analiza technik manipulacji, erystyki i wywierania wpływu w poniższym tekście.',
+        '',
+        'Zwróć WYŁĄCZNIE poprawny obiekt JSON (zero markdown, zero wyjaśnień poza JSON):',
+        '{"manipulation_intensity":0,"verdict":"jedno zdanie: jaki jest cel i siła manipulacyjna tekstu","techniques_summary":"2-3 zdania opisujące główne techniki erystyczne","semantic_deconstruction":[{"fragment":"cytowany fragment","technique":"dokładna nazwa techniki np. Ad Hominem, Whataboutism, Poisoning the Well, Gaslighting, Strawman, False Dilemma, Appeal to Fear, Bandwagon, Gish Gallop","analysis":"jak ta technika działa w tym konkretnym kontekście - 2-3 zdania","impact":"jaki efekt psychologiczny wywołuje u odbiorcy","severity":"LOW lub MEDIUM lub HIGH lub CRITICAL"}],"logical_errors":[{"technique_name":"nazwa błędu logicznego","quote":"dokładny cytat","description":"wyjaśnienie błędu i dlaczego jest skuteczny","severity":"LOW lub MEDIUM lub HIGH lub CRITICAL"}],"ideological_foundation":"jaki światopogląd lub interes jest tu promowany - 3 zdania","psychological_mechanism":"jaki mechanizm psychologiczny jest atakowany: np. strach, przynależność do grupy, autorytet, wzajemność, pilność - 2-3 zdania","rebuttal_questions":["pytanie demaskujące technikę 1","pytanie demaskujące technikę 2","pytanie demaskujące technikę 3"],"counters":["konkretny kontrargument z gotową odpowiedzią słowną 1","konkretny kontrargument z gotową odpowiedzią słowną 2","konkretny kontrargument z gotową odpowiedzią słowną 3"],"context":"kontekst historyczny lub null"}',
+        '',
+        'Analizuj w języku polskim. Bądź precyzyjny w nazewnictwie technik. Kontrargumenty mają być gotowymi odpowiedziami które można użyć w debacie.',
+        '',
+        'Tekst do analizy:',
+        text
+    ];
+    const prompt = promptParts.join('\n');
+
+    try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-2.5-flash',
+            generationConfig: {
+                responseMimeType: 'application/json',
+                thinkingConfig: { thinkingBudget: 0 }
+            }
+        });
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const responseText = response.text();
+
+        let results;
+        try {
+            results = JSON.parse(responseText);
+        } catch (e) {
+            const match = responseText.match(/\{[\s\S]*\}/);
+            if (match) results = JSON.parse(match[0]);
+            else throw new Error('Nie udało się przetworzyć odpowiedzi AI. Spróbuj ponownie.');
+        }
+
+        results.semantic_deconstruction = results.semantic_deconstruction || [];
+        results.logical_errors = results.logical_errors || [];
+        results.rebuttal_questions = results.rebuttal_questions || [];
+        results.counters = results.counters || [];
+        results.psychological_mechanism = results.psychological_mechanism || '';
+
         const display = document.querySelector('#weryfikator-tab .results-display');
         display.classList.remove('hidden');
-        
-        // Populate Deconstruction Layers
+
+        renderWeryfikatorBanner(results.verdict, results.manipulation_intensity, results.techniques_summary);
         renderDeconList(results.semantic_deconstruction, '#weryfikator-semantic-list', 'semantic');
-        document.getElementById('weryfikator-ideological-text').innerText = results.ideological_foundation;
+        document.getElementById('weryfikator-ideological-text').innerText = results.ideological_foundation || '';
         renderDeconList(results.logical_errors, '#weryfikator-logical-list', 'logical');
         renderSimpleList(results.rebuttal_questions, '#weryfikator-rebuttal-list', 'rebuttal-item');
-
-        renderSimpleList(results.counters || [], '#weryfikator-tab .counter-list', 'counter-item');
+        renderSimpleList(results.counters, '#weryfikator-tab .counter-list', 'counter-item');
+        renderPsychologicalMechanism(results.psychological_mechanism);
+        renderContextCard(results.context, 'weryfikator');
 
         const eduResults = callEducatorAgent(text, 'eristics');
         currentQuiz = eduResults.quiz;
         updateQuizPlaceholder();
-        
-        stopLoading(this);
+
         display.scrollIntoView({ behavior: 'smooth' });
-    }, 1500);
+
+    } catch (error) {
+        console.error('Błąd weryfikacji:', error);
+        alert('Błąd weryfikacji: ' + error.message);
+    } finally {
+        stopLoading(self);
+    }
 });
+
+function renderWeryfikatorBanner(verdict, intensity, techniques_summary) {
+    let banner = document.getElementById('weryfikator-verdict-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'weryfikator-verdict-banner';
+        const display = document.querySelector('#weryfikator-tab .results-display');
+        display.insertBefore(banner, display.firstChild);
+    }
+    const level = intensity < 30 ? 'safe' : intensity < 60 ? 'warning' : 'danger';
+    const icon = intensity < 30 ? '✅' : intensity < 60 ? '⚠️' : '🚨';
+    const label = intensity < 30 ? 'Niska manipulacja' : intensity < 60 ? 'Średnia manipulacja' : 'Wysoka manipulacja';
+    banner.className = 'verdict-banner verdict-' + level;
+    banner.innerHTML =
+        '<div class="verdict-icon">' + icon + '</div>' +
+        '<div class="verdict-content">' +
+            '<div class="verdict-text">' + (verdict || '') + '</div>' +
+            (techniques_summary ? '<div class="manipulation-summary">' + techniques_summary + '</div>' : '') +
+        '</div>' +
+        '<div class="intensity-indicator">' +
+            '<div class="intensity-label">' + label + '</div>' +
+            '<div class="intensity-bar"><div class="intensity-fill" style="width:' + (intensity || 0) + '%"></div></div>' +
+            '<div class="intensity-value">' + (intensity || 0) + '/100</div>' +
+        '</div>';
+}
+
+function renderPsychologicalMechanism(mechanism) {
+    let card = document.getElementById('weryfikator-psych-card');
+    if (!mechanism) { if (card) card.remove(); return; }
+    if (!card) {
+        card = document.createElement('div');
+        card.id = 'weryfikator-psych-card';
+        card.className = 'decon-layer psych-mechanism-layer';
+        const rebuttalLayer = document.querySelector('#weryfikator-tab .decon-layer[data-layer="rebuttal"]');
+        if (rebuttalLayer) rebuttalLayer.insertAdjacentElement('beforebegin', card);
+    }
+    card.innerHTML =
+        '<h4><i class="layer-icon">🧬</i> Mechanizm Psychologiczny</h4>' +
+        '<div class="layer-content"><div class="psych-mechanism-text">' + mechanism + '</div></div>';
+}
+
+function renderContextCard(context, prefix) {
+    const id = (prefix || 'analityk') + '-context-card';
+    let card = document.getElementById(id);
+    if (!context) { if (card) card.remove(); return; }
+    if (!card) {
+        card = document.createElement('div');
+        card.id = id;
+        card.className = 'result-card glass context-card full-width';
+        const suggestionsCard = document.querySelector('#' + (prefix || 'analityk') + '-tab .suggestions-card');
+        if (suggestionsCard) suggestionsCard.insertAdjacentElement('afterend', card);
+        else {
+            const display = document.querySelector('#' + (prefix || 'analityk') + '-tab .results-display');
+            if (display) display.appendChild(card);
+        }
+    }
+    card.innerHTML =
+        '<div class="decon-header"><span class="badge">KONTEKST</span><h3>Kontekst Historyczny i Polityczny</h3></div>' +
+        '<p class="context-text">' + context + '</p>';
+}
+
 
 // --- Tab: Glossary ---
 const glossarySearchInput = document.getElementById('glossary-search-input');
