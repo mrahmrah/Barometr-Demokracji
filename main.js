@@ -479,6 +479,80 @@ function renderContextCard(context) {
         '<p class="context-text">' + context + '</p>';
 }
 
+        renderDeconList(results.logical_errors, '#analityk-logical-list', 'logical');
+        renderSimpleList(results.rebuttal_questions, '#analityk-rebuttal-list', 'rebuttal-item');
+        renderSimpleList(results.suggestions, '#analityk-tab .suggestions-list', 'suggestion-item');
+
+        const ogikContainer = document.getElementById('analityk-ogik-metrics');
+        ogikContainer.classList.remove('hidden');
+        setTimeout(function() {
+            document.getElementById('analityk-emotion-pointer').style.left = results.emotional_temperature + '%';
+        }, 100);
+
+        const dogmaValue = document.getElementById('analityk-dogma-value');
+        const dogmaTooltip = document.getElementById('analityk-dogma-tooltip');
+        dogmaValue.innerText = results.dogma_counter.length;
+        dogmaTooltip.innerHTML = results.dogma_counter.length > 0
+            ? '<h4>Wykryte Dogmaty (' + results.dogma_counter.length + '):</h4><ul>' + results.dogma_counter.map(function(d){ return '<li>' + d + '</li>'; }).join('') + '</ul>'
+            : '<span>Brak wykrytych zwrotów dogmatycznych.</span>';
+
+        const rephraseBtn = document.getElementById('analityk-rephrase-btn');
+        const rephraseText = document.getElementById('analityk-rephrased-text');
+        const rephrasePanel = document.getElementById('analityk-rephrase-panel');
+        rephraseBtn.classList.remove('hidden');
+        rephraseText.innerText = results.rephrased_text;
+        if (!rephrasePanel.classList.contains('hidden')) rephrasePanel.classList.add('hidden');
+
+        renderContextCard(results.context);
+
+        const eduResults = callEducatorAgent(text, 'democracy');
+        currentQuiz = eduResults.quiz;
+        updateQuizPlaceholder();
+
+        display.scrollIntoView({ behavior: 'smooth' });
+
+    } catch (error) {
+        console.error('Błąd analizy:', error);
+        alert('Błąd analizy: ' + error.message);
+    } finally {
+        stopLoading(self);
+    }
+});
+
+function renderVerdictBanner(verdict, score, manipulation_summary) {
+    let banner = document.getElementById('analityk-verdict-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'analityk-verdict-banner';
+        const display = document.querySelector('#analityk-tab .results-display');
+        display.insertBefore(banner, display.firstChild);
+    }
+    const level = score > 70 ? 'safe' : score > 40 ? 'warning' : 'danger';
+    const icon = score > 70 ? '✅' : score > 40 ? '⚠️' : '🚨';
+    banner.className = 'verdict-banner verdict-' + level;
+    banner.innerHTML =
+        '<div class="verdict-icon">' + icon + '</div>' +
+        '<div class="verdict-content">' +
+            '<div class="verdict-text">' + (verdict || '') + '</div>' +
+            (manipulation_summary ? '<div class="manipulation-summary">' + manipulation_summary + '</div>' : '') +
+        '</div>';
+}
+
+function renderContextCard(context) {
+    let card = document.getElementById('analityk-context-card');
+    if (!context) { if (card) card.remove(); return; }
+    if (!card) {
+        card = document.createElement('div');
+        card.id = 'analityk-context-card';
+        card.className = 'result-card glass context-card full-width';
+        const suggestionsCard = document.querySelector('#analityk-tab .suggestions-card');
+        if (suggestionsCard) suggestionsCard.insertAdjacentElement('afterend', card);
+    }
+    card.innerHTML =
+        '<div class="decon-header"><span class="badge">KONTEKST</span><h3>Kontekst Historyczny i Polityczny</h3></div>' +
+        '<p class="context-text">' + context + '</p>';
+}
+
 
 // Rephrase Button Logic
 document.getElementById('analityk-rephrase-btn').addEventListener('click', () => {
@@ -584,31 +658,36 @@ function renderGlossaryDetail(item) {
         <div class="fadeIn">
             <div class="detail-category">${item.category.replace('_', ' ')}</div>
             <h2 class="detail-title">${item.term}</h2>
-            <div class="detail-definition">${item.definition}</div>
-            <div class="detail-example-box">
-                <div class="detail-example-text">"${item.example}"</div>
-            </div>
-        </div>
-    `;
-}
+function renderDeconList(items, selector, type) {
+    const container = document.querySelector(selector);
+    if (!container) return;
+    container.innerHTML = '';
 
-function renderSamples() {
-    const container = document.querySelector('.samples-grid');
-    if (container.children.length > 0) return;
-
-    samples.forEach(sample => {
+    items.forEach(function(item) {
         const card = document.createElement('div');
-        card.className = 'sample-card glass';
-        // Check if sample has a specific id to handle routing later if needed
-        card.setAttribute('data-id', sample.id);
-        
-        let tagColorAttr = '';
-        if (sample.category === 'populism' || sample.category === 'hate_speech' || sample.category === 'eristic') {
-            tagColorAttr = 'style="color: var(--error-color);"';
-        } else if (sample.category === 'democracy_manifesto') {
-            tagColorAttr = 'style="color: var(--success-color);"';
+        card.className = 'decon-item-card ' + type + '-item';
+        const sev = item.severity || '';
+        const sevBadge = sev ? '<span class="severity-badge severity-' + sev.toLowerCase() + '">' + sev + '</span>' : '';
+        if (type === 'semantic') {
+            card.innerHTML =
+                '<div class="item-header">' +
+                    '<div class="item-fragment">&ldquo;' + item.fragment + '&rdquo;</div>' +
+                    '<div class="item-badges">' + (item.technique ? '<span class="technique-badge">' + item.technique + '</span>' : '') + sevBadge + '</div>' +
+                '</div>' +
+                '<div class="item-analysis">' + item.analysis + '</div>' +
+                '<div class="item-impact"><strong>Wpływ:</strong> ' + item.impact + '</div>';
+        } else if (type === 'logical') {
+            card.innerHTML =
+                '<div class="item-header">' +
+                    '<div class="item-tech-name">' + item.technique_name + '</div>' +
+                    sevBadge +
+                '</div>' +
+                '<div class="item-quote">&ldquo;' + item.quote + '&rdquo;</div>' +
+                '<div class="item-description">' + item.description + '</div>';
         }
-
+        container.appendChild(card);
+    });
+}
         const tagMap = {
             'populism': 'Populizm',
             'eristic': 'Erystyka',
@@ -873,81 +952,3 @@ function callVerifierAgent(text) {
             ]
         };
     }
-
-    const lower = text.toLowerCase();
-    const semantic = [];
-    const logical = [];
-    const rebuttal = ["Jakie są alternatywne rozwiązania tego problemu?", "Dlaczego autor ogranicza wybór tylko do dwóch opcji?"];
-
-    if (lower.includes('marionetki')) {
-        semantic.push({
-            fragment: "marionetki",
-            analysis: "Metafora sugerująca brak podmiotowości i sterowanie z zewnątrz.",
-            impact: "Dehumanizuje oponentów i buduje poczucie zagrożenia zewnętrznego."
-        });
-    }
-
-    if (lower.includes('albo') && lower.includes('reformy') && lower.includes('chaos')) {
-        logical.push({
-            technique_name: "Falsa Dichotomia",
-            description: "Prezentowanie złożonego problemu jako wyboru między dwiema skrajnościami (szantaż emocjonalny).",
-            quote: "Albo poprzecie nasze reformy... albo czeka nas całkowity chaos."
-        });
-    }
-
-    if (lower.includes('a co robiliście') || lower.includes('a za waszych')) {
-        logical.push({
-            technique_name: "Whataboutism",
-            description: "Odwracanie uwagi od problemu poprzez wskazywanie na inne, często niepowiązane błędy oponentów.",
-            quote: "A co robiliście wy, gdy zamykano kopalnie?"
-        });
-    }
-
-    return { 
-        democracy_score: 35,
-        semantic_deconstruction: semantic,
-        logical_errors: logical,
-        ideological_foundation: "Narracja oparta na polaryzacji i podważaniu legitymacji oponentów oraz instytucji.",
-        rebuttal_questions: rebuttal,
-        counters: [
-            'Wskaż na technikę ad personam i poproś o powrót do meritum sprawy.',
-            'Zdemaskuj fałszywy dylemat, pokazując alternatywne rozwiązania.',
-            'Zauważ próbę whataboutismu i wróć do pytania o reformy sądownictwa.'
-        ] 
-    };
-}
-
-function callEducatorAgent(text, analysisType) {
-    // Generates a simple quiz based on the detected issues
-    const lower = text.toLowerCase();
-    let question = "Jaka jest główna lekcja z tego tekstu?";
-    let options = ["Należy być krytycznym", "Tekst jest poprawny", "Nic nie wiadomo"];
-    let answer = "Należy być krytycznym";
-    let explanation = "Każdy przekaz w sferze publicznej warto analizować pod kątem intencji nadawcy.";
-
-    if (lower.includes('zdrajcy')) {
-        question = "Jakie zagrożenie niesie używanie słowa 'zdrajcy' w debacie?";
-        options = ["Buduje patriotyzm", "Wyklucza i polaryzuje społeczeństwo", "Jest konieczne w polityce"];
-        answer = "Wyklucza i polaryzuje społeczeństwo";
-        explanation = "Stygmatyzacja oponentów politycznych utrudnia dialog i podważa fundamenty pluralizmu.";
-    }
-
-    return {
-        quiz: [{ question, options, answer, explanation }]
-    };
-}
-
-document.querySelectorAll('.clear-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const tab = this.closest('.tab-content');
-        tab.querySelector('.main-text-input').value = '';
-        tab.querySelector('.results-display').classList.add('hidden');
-        
-        const ogikContainer = tab.querySelector('.ogik-metrics');
-        if (ogikContainer) ogikContainer.classList.add('hidden');
-        const rephraseBtn = tab.querySelector('.rephrase-btn');
-        if (rephraseBtn) rephraseBtn.classList.add('hidden');
-        const rephrasePanel = tab.querySelector('.rephrase-panel');
-        if (rephrasePanel) rephrasePanel.classList.add('hidden');
-    });
-});
